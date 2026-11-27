@@ -284,17 +284,23 @@
           },
           adv: {
             showRewardedVideo: function (o) {
-              var cb = (o && o.callbacks) || {}, a = ad('rewarded'), opened = false;
-              if (!a || !a.isSupported) { if (cb.onError) cb.onError('not supported'); return; }
-              a.canShow().then(function (ok) {
-                if (!ok) { if (cb.onError) cb.onError('cannot show'); return; }
-                opened = true; if (cb.onOpen) cb.onOpen();
-                return a.show().then(function (r) {
-                  refocus();
-                  if (r && r.reward && cb.onRewarded) cb.onRewarded();
-                  if (cb.onClose) cb.onClose();
-                });
-              }).catch(function (e) { console.warn('Pikabu rewarded error', e); if (opened) { if (cb.onClose) cb.onClose(); } else if (cb.onError) cb.onError(e); });
+              // 27.11: без canShow — сразу show(): Пикабу возвращает причину отказа (COOLDOWN_ACTIVE, UI_BUSY, IN_PROGRESS...).
+              // Причину передаём в игру (YandexSdk.OnAdUnavailable) — игрок видит надпись, а не «кнопка ничего не делает».
+              var cb = (o && o.callbacks) || {}, a = ad('rewarded');
+              function fail(reason) {
+                reason = String(reason || 'UNKNOWN');
+                console.warn('AF: реклама Пикабу не показана — ' + reason);
+                try { if (window.afUnity) window.afUnity.SendMessage('YandexSdk', 'OnAdUnavailable', (sdk.isDev || /sandbox/.test(document.referrer || '')) ? reason : ''); } catch (e) {}
+                if (cb.onError) cb.onError(reason);
+              }
+              if (!a || !a.isSupported) { fail('NOT_SUPPORTED'); return; }
+              if (cb.onOpen) cb.onOpen();
+              a.show().then(function (r) {
+                refocus();
+                if (!r || !r.rendered) { fail(r && r.reason); return; }
+                if (r.reward && cb.onRewarded) cb.onRewarded();
+                if (cb.onClose) cb.onClose();
+              }).catch(function (e) { refocus(); fail(e && (e.message || e)); });
             },
             showFullscreenAdv: function (o) {
               var cb = (o && o.callbacks) || {}, a = ad('fullscreen');
