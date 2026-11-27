@@ -1,0 +1,31 @@
+html, body { padding: 0; margin: 0; width: 100%; height: 100%; overflow: hidden; background: #100b08 }
+#unity-container { position: absolute }
+#unity-container.unity-desktop { left: 50%; top: 50%; transform: translate(-50%, -50%) }
+#unity-container.unity-mobile { position: fixed; width: 100%; height: 100% }
+#unity-canvas { background: #231F20 }
+.unity-mobile #unity-canvas { width: 100%; height: 100% }
+#unity-loading-bar { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none }
+/* 21.11: вместо значка Unity — логотип игры и золотая полоска загрузки. */
+#unity-logo { width: min(520px, 80vw); height: min(180px, 28vw); margin: 0 auto; background: url('logo_ru.png') no-repeat center / contain }
+.af-en #unity-logo { background-image: url('logo_en.png') }
+#unity-progress-bar-empty { width: min(360px, 60vw); height: 10px; margin: 18px auto 0; background: rgba(16,11,8,.85); border: 1px solid #b8913f; border-radius: 6px; overflow: hidden }
+#unity-progress-bar-full { width: 0%; height: 100%; margin: 0; background: linear-gradient(180deg, #f6e0a8, #c9822a) }
+/* Подвал Unity (логотип, кнопка полного экрана) занимал 38px под холстом и выталкивал верх игры за окно. */
+#unity-footer { display: none }
+.unity-mobile #unity-footer { display: none }
+#unity-logo-title-footer { float:left; width: 102px; height: 38px; background: url('unity-logo-title-footer.png') no-repeat center }
+#unity-build-title { float: right; margin-right: 10px; line-height: 38px; font-family: arial; font-size: 18px }
+#unity-fullscreen-button { cursor:pointer; float: right; width: 38px; height: 38px; background: url('fullscreen-button.png') no-repeat center }
+#unity-warning { position: absolute; left: 50%; top: 5%; transform: translate(-50%); background: white; padding: 10px; display: none }
+#af-fullscreen { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; opacity: .75; display: none; align-items: center; justify-content: center; font: 22px/1 Arial, sans-serif; color: #e8cc8b; background: rgba(16,11,8,.65); border: 1px solid #b8913f; border-radius: 6px; cursor: pointer; z-index: 10; user-select: none }
+#af-fullscreen:hover { background: rgba(60,30,15,.85) }
+/* 21.11: телефоны и Яндекс Игры — без выделения, без системного меню на долгом тапе, без жестов браузера на холсте. */
+html, body, #unity-canvas { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent }
+#unity-canvas { touch-action: none; outline: none }
+/* На телефоне своя кнопка полного экрана не нужна (iPhone её не поддерживает, Яндекс сам открывает игру на весь экран). */
+.af-mobile #af-fullscreen { display: none !important }
+/* Заглушка «поверните телефон» — только в портретной ориентации на телефоне. */
+#af-rotate { display: none; position: fixed; inset: 0; z-index: 50; background: #100b08; color: #e8cc8b; font: 22px/1.4 Georgia, serif; text-align: center; align-items: center; justify-content: center; flex-direction: column; gap: 18px; padding: 24px }
+#af-rotate span { font-size: 16px; opacity: .7 }
+#af-rotate .af-rotate-icon { font-size: 64px; line-height: 1 }
+@media (orientation: portrait) { .af-mobile #af-rotate { display: flex } }

@@ -1,0 +1,149 @@
+ManifestFileVersion: 0
+UnityVersion: 6000.5.9f1
+CRC: 2732013857
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: b33f438f5fda2ae259263a7637f8d595
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 1030cd808d5575283c1ef1e4f7e9edbc
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: 22e10e73b8d2e4232ffb474a3c25957a
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 43
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 50
+  Script: {instanceID: 0}
+- Class: 70
+  Script: {instanceID: 0}
+- Class: 74
+  Script: {instanceID: 0}
+- Class: 90
+  Script: {instanceID: 0}
+- Class: 91
+  Script: {instanceID: 0}
+- Class: 95
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 11500000, guid: 1399f85995701eb45a3d2ad5c9a5be71, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 81271c50fff17324fbf922394306f0f9, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 632e46780797f4c459395bf68c6710a5, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 13f9e9a9b97d2534d90331490c6d4c6a, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 612429463f8c3884baa72e43c5dc4612, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: b880657e2a63092489d2a75583ffb6ca, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: faa4436b979b9f247a7ba4d7d43decf5, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 0b4c2b7ac454a3748869e52d86043753, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: fcd798c4228971648af869433dcb559e, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 5a0495a7bf6fc8b49a760c5b98a3fef7, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 6710fcd6db188d244b5f5ef2489f606c, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 71c1514a6bd24e1e882cebbe1904ce04, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 128
+  Script: {instanceID: 0}
+- Class: 137
+  Script: {instanceID: 0}
+- Class: 213
+  Script: {instanceID: 0}
+- Class: 222
+  Script: {instanceID: 0}
+- Class: 223
+  Script: {instanceID: 0}
+- Class: 224
+  Script: {instanceID: 0}
+- Class: 225
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers:
+- AssemblyName: Assembly-CSharp
+  ClassName: Gemma
+- AssemblyName: Assembly-CSharp
+  ClassName: InventoryGemIconFit/SpriteArea
+- AssemblyName: Unity.TextMeshPro
+  ClassName: TMPro.FaceInfo_Legacy
+- AssemblyName: Unity.TextMeshPro
+  ClassName: TMPro.FontAssetCreationSettings
+- AssemblyName: Unity.TextMeshPro
+  ClassName: TMPro.KerningTable
+- AssemblyName: Unity.TextMeshPro
+  ClassName: TMPro.TMP_Character
+- AssemblyName: Unity.TextMeshPro
+  ClassName: TMPro.TMP_FontFeatureTable
+- AssemblyName: Unity.TextMeshPro
+  ClassName: TMPro.TMP_FontWeightPair
+- AssemblyName: Unity.TextMeshPro
+  ClassName: TMPro.VertexGradient
+- AssemblyName: UnityEngine.CoreModule
+  ClassName: UnityEngine.Color
+- AssemblyName: UnityEngine.CoreModule
+  ClassName: UnityEngine.Color32
+- AssemblyName: UnityEngine.CoreModule
+  ClassName: UnityEngine.Events.PersistentCallGroup
+- AssemblyName: UnityEngine.CoreModule
+  ClassName: UnityEngine.LayerMask
+- AssemblyName: UnityEngine.CoreModule
+  ClassName: UnityEngine.Rect
+- AssemblyName: UnityEngine.CoreModule
+  ClassName: UnityEngine.Vector2
+- AssemblyName: UnityEngine.CoreModule
+  ClassName: UnityEngine.Vector4
+- AssemblyName: UnityEngine.TextCoreFontEngineModule
+  ClassName: UnityEngine.TextCore.FaceInfo
+- AssemblyName: UnityEngine.TextCoreFontEngineModule
+  ClassName: UnityEngine.TextCore.Glyph
+- AssemblyName: UnityEngine.TextCoreFontEngineModule
+  ClassName: UnityEngine.TextCore.GlyphMetrics
+- AssemblyName: UnityEngine.TextCoreFontEngineModule
+  ClassName: UnityEngine.TextCore.GlyphRect
+- AssemblyName: UnityEngine.TextCoreFontEngineModule
+  ClassName: UnityEngine.TextCore.LowLevel.GlyphAdjustmentRecord
+- AssemblyName: UnityEngine.TextCoreFontEngineModule
+  ClassName: UnityEngine.TextCore.LowLevel.GlyphPairAdjustmentRecord
+- AssemblyName: UnityEngine.TextCoreFontEngineModule
+  ClassName: UnityEngine.TextCore.LowLevel.GlyphValueRecord
+- AssemblyName: UnityEngine.UI
+  ClassName: UnityEngine.UI.MaskableGraphic/CullStateChangedEvent
+Assets:
+- Assets/LateFadeVariants/LateFade_00.mat
+- Assets/LateFadeVariants/LateFade_02.mat
+- Assets/Prefabs/SkeletonSpartanHHoplite_Rare.prefab
+- Assets/Prefabs/SkeletonSpartanRoyal_Epic.prefab
+- Assets/Prefabs/Boss_Demon1.prefab
+- Assets/LateFadeVariants/LateFade_04.mat
+- Assets/Prefabs/SkeletonSpartanSpearman_Mythic.prefab
+- Assets/Prefabs/SkeletonSpartanPerioikos_Legendary.prefab
+- Assets/LateFadeVariants/LateFade_03.mat
+- Assets/LateFadeVariants/LateFade_01.mat
+- Assets/Prefabs/SkeletonSpartanIlote_Rare.prefab
+Dependencies: []

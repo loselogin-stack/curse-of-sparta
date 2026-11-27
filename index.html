@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <script>
+      // 22.11: отладочная панель — только если в адресе есть afdebug=1: строки сохранения/облака/докачки и ошибки
+      // выводятся поверх игры, плюс что лежит в хранилище браузера (IndexedDB /idbfs) при запуске.
+      (function () {
+        var on = /afdebug=1/.test(location.search + location.hash);   // 22.11: только по явной добавке ?afdebug=1
+        // 25.11: на Яндексе игра идёт во вложенной странице, и добавка к адресу до неё не доходит. Там панель включается
+        // добавкой ?payload=afdebug к адресу игры на Яндексе: SDK отдаёт её игре, см. afInitSdk ниже.
+        try { if (sessionStorage.getItem('AF.Debug') === '1') on = true; } catch (e) {}
+        if (!on) return;
+        var lines = [], box = null;
+        function show() {
+          if (!box) {
+            if (!document.body) return;
+            box = document.createElement('div');
+            box.style.cssText = 'position:fixed;left:4px;bottom:4px;max-width:46%;z-index:99999;background:rgba(0,0,0,.75);color:#ffd27a;font:11px/1.3 monospace;padding:4px 6px;pointer-events:none;white-space:pre-wrap;';
+            document.body.appendChild(box);
+          }
+          box.textContent = lines.slice(-8).join('\n');   // 25.11: было 14 — на телефоне панель закрывала пол-экрана
+        }
+        window.AFDbg = function (t) { lines.push(new Date().toTimeString().slice(0, 8) + ' ' + t); show(); };
+        // 23.11: счётчик кадров и замер загрузки (только при afdebug=1). Считает интервалы между кадрами браузера —
+        // это тот же такт, в котором рисует Unity. Окно сверху слева обновляется раз в 2 с:
+        // средний FPS, минимальный FPS и худший кадр за эти 2 с, затем итог за сеанс (сколько кадров дольше 50 и 100 мс).
+        (function () {
+          var fbox = null, times = [], last = 0, worst = 0, slow50 = 0, slow100 = 0, total = 0, sum = 0;
+          window.AFFpsReset = function () { worst = 0; slow50 = 0; slow100 = 0; total = 0; sum = 0; times = []; };
+          function tick(now) {
+            if (last) { var dt = now - last; times.push(dt); total++; sum += dt; if (dt > worst) worst = dt; if (dt > 50) slow50++; if (dt > 100) slow100++; }
+            last = now; requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+          setInterval(function () {
+            if (!document.body || !times.length) return;
+            if (!fbox) {
+              fbox = document.createElement('div');
+              fbox.style.cssText = 'position:fixed;left:4px;top:4px;z-index:99999;background:rgba(0,0,0,.75);color:#9cff9c;font:12px/1.35 monospace;padding:4px 6px;pointer-events:none;white-space:pre;';
+              document.body.appendChild(fbox);
+            }
+            var n = times.length, s = 0, mx = 0;
+            for (var i = 0; i < n; i++) { s += times[i]; if (times[i] > mx) mx = times[i]; }
+            var sorted = times.slice().sort(function (a, b) { return a - b; }), p95 = sorted[Math.min(n - 1, Math.floor(n * .95))];
+            var mem = (performance.memory && performance.memory.usedJSHeapSize) ? '  JS ' + (performance.memory.usedJSHeapSize / 1048576).toFixed(0) + ' МБ' : '';
+            fbox.textContent = 'FPS ' + (1000 * n / s).toFixed(0) + '  мин ' + (1000 / mx).toFixed(0) + '  кадр ' + (s / n).toFixed(1) + ' мс  95% ' + p95.toFixed(0) + '  худший ' + mx.toFixed(0) + mem +
+              '\nсеанс: FPS ' + (total ? (1000 * total / sum).toFixed(0) : '-') + '  худший ' + worst.toFixed(0) + ' мс  >50 мс: ' + slow50 + '  >100 мс: ' + slow100 + '  кадров ' + total;
+            times = [];
+          }, 2000);
+        })();
+        // Замер загрузки: сколько весили и сколько качались файлы старта, когда движок готов. Вызывается ниже, из then().
+        window.AFDbgLoad = function (label) {
+          try {
+            var parts = [label + ' ' + (performance.now() / 1000).toFixed(1) + ' с от открытия страницы'];
+            performance.getEntriesByType('resource').forEach(function (r) {
+              if (!/\/Build\/|StreamingAssets/.test(r.name)) return;
+              var size = r.transferSize || r.encodedBodySize || 0;
+              parts.push(r.name.split('/').pop().replace('UnityWebGLTest.', '') + ' ' + (size / 1e6).toFixed(1) + ' МБ за ' + (r.duration / 1000).toFixed(1) + ' с' + (r.transferSize === 0 && r.encodedBodySize ? ' (кэш)' : ''));
+            });
+            window.AFDbg(parts.join(' | '));
+          } catch (e) { window.AFDbg('замер загрузки: ' + e); }
+        };
+        ['log', 'warn', 'error'].forEach(function (k) {
+          var orig = console[k];
+          console[k] = function () {
+            try {
+              var t = Array.prototype.map.call(arguments, function (a) { return typeof a === 'string' ? a : (a && a.message) || String(a); }).join(' ');
+              if (/элемент уже уничтожен/.test(t)) return orig.apply(console, arguments);   // 25.11: однотипные строки про Пантеон в панель не идут
+              if (k === 'error' || /AF |AF:|LateContent|Yandex|cloud|PlayerPrefs/.test(t)) window.AFDbg((k === 'log' ? '' : k + ': ') + t.split('\n')[0].slice(0, 220));
+            } catch (e) {}
+            return orig.apply(console, arguments);
+          };
+        });
+        document.addEventListener('DOMContentLoaded', show);
+        try {
+          var req = indexedDB.open('/idbfs');
+          req.onsuccess = function () {
+            var db = req.result;
+            if (!db.objectStoreNames.contains('FILE_DATA')) { window.AFDbg('IDB: хранилище пустое'); return; }
+            var found = [], st = db.transaction('FILE_DATA', 'readonly').objectStore('FILE_DATA');
+            st.openCursor().onsuccess = function (e) {
+              var c = e.target.result;
+              if (c) {
+                if (/PlayerPrefs/.test(c.key)) found.push(c.key + ' ' + ((c.value.contents && c.value.contents.length) || 0) + ' байт ' + new Date(c.value.timestamp).toLocaleString());
+                c.continue();
+              } else window.AFDbg('IDB при запуске: ' + (found.length ? found.join(' | ') : 'файла PlayerPrefs НЕТ'));
+            };
+          };
+          req.onerror = function () { window.AFDbg('IDB: не открывается ' + req.error); };
+        } catch (e) { window.AFDbg('IDB: ' + e); }
+      })();
+    </script>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>AF</title>
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes">
+    <!-- 21.11: SDK Яндекс Игр. На площадке /sdk.js отдаёт сам Яндекс; локально файла нет — игра работает без SDK. -->
+    <script src="/sdk.js"></script>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+  </head>
+  <body>
+    <div id="unity-container" class="unity-desktop">
+      <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
+      <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+      </div>
+      <div id="unity-warning"> </div>
+      <div id="af-rotate"><div class="af-rotate-icon">&#x21BB;</div><div>Поверните телефон горизонтально<br><span>Rotate your phone to landscape</span></div></div>
+      <div id="unity-footer">
+        <div id="unity-logo-title-footer"></div>
+        <div id="unity-fullscreen-button"></div>
+        <div id="unity-build-title">AF</div>
+      </div>
+    </div>
+    <script>
+      var canvas = document.querySelector("#unity-canvas");
+
+      // Shows a temporary message banner/ribbon for a few seconds, or
+      // a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
+      // Modify or remove this function to customize the visually presented
+      // way that non-critical warnings and error messages are presented to the
+      // user.
+      function unityShowBanner(msg, type) {
+        var warningBanner = document.querySelector("#unity-warning");
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/UnityWebGLTest.loader.js";
+      var config = {
+        arguments: [],
+        dataUrl: buildUrl + "/UnityWebGLTest.data.unityweb",
+        frameworkUrl: buildUrl + "/UnityWebGLTest.framework.js.unityweb",
+        codeUrl: buildUrl + "/UnityWebGLTest.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "AF",
+        productVersion: "1.0",
+        showBanner: unityShowBanner,
+        // 25.11: докачиваемые части (StreamingAssets/late — фоны, мобы, ученики) браузер теперь хранит у себя, как и основной
+        // файл игры: при повторном запуске они берутся с устройства, а не качаются заново. Перед использованием сверяются
+        // с сервером (must-revalidate), так что после обновления сборки старые не подставятся.
+        cacheControl: function (url) {
+          if (url.match(/\.data/) || url.match(/\.bundle/) || url.indexOf("/late/") >= 0) return "must-revalidate";
+          if (url.match(/\.mp4/) || url.match(/\.wav/)) return "immutable";
+          return "no-store";
+        },
+        // errorHandler: function(err, url, line) {
+        //    alert("error " + err + " occurred at line " + line);
+        //    // Return 'true' if you handled the error and don't want Unity
+        //    // to process it further, 'false' otherwise.
+        //    return true;
+        // },
+      };
+
+      // By default, Unity keeps WebGL canvas render target size matched with
+      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
+      // Set this to false if you want to decouple this synchronization from
+      // happening inside the engine, and you would instead like to size up
+      // the canvas DOM size and WebGL render target sizes yourself.
+      // config.matchWebGLToCanvasSize = false;
+
+      // If you would like all file writes inside Unity Application.persistentDataPath
+      // directory to automatically persist so that the contents are remembered when the
+      // user revisits the site the next time, uncomment the following line:
+      config.autoSyncPersistentDataPath = true;   // 22.11: Unity 6 — сохранения сами записываются в хранилище браузера
+      // This autosyncing is currently not the default behavior to avoid regressing
+      // existing user projects that might rely on the earlier manual
+      // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
+      // expected to change.
+
+      // The game UI is designed for a 16:9 screen (Canvas Scaler reference
+      // 1920x1080). Keep the canvas at a 16:9 aspect ratio at all window
+      // sizes so the whole scene and interface always stay visible.
+      function fitCanvasToWindow() {
+        var aspect = 16.0 / 9.0;
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+        if (w / h > aspect) {
+          w = Math.round(h * aspect);
+        } else {
+          h = Math.round(w / aspect);
+        }
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+      }
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Mobile device style: fill the whole browser client area with the game canvas:
+
+        // 21.11: на телефоне тоже держим 16:9 (фоны и интерфейс рассчитаны на 16:9): игра упирается в края по одной стороне.
+        document.body.classList.add("af-mobile");
+        fitCanvasToWindow();
+        window.addEventListener('resize', fitCanvasToWindow);
+        window.addEventListener('orientationchange', function () { setTimeout(fitCanvasToWindow, 300); });
+
+        // To lower canvas resolution on mobile devices to gain some
+        // performance, uncomment the following line:
+        // 21.11: на телефонах не рендерим больше чем в 1,5× — экраны с плотностью 3× иначе сильно тормозят.
+        config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+
+
+      } else {
+        // Desktop style: keep a 16:9 canvas that always fits the browser
+        // window, so no part of the game area is cut off.
+        fitCanvasToWindow();
+        window.addEventListener('resize', fitCanvasToWindow);
+      }
+
+      // 21.11: логотип на загрузке — по языку браузера (до SDK); русский для ru/be/kk/uk/uz.
+      if (!/^(ru|be|kk|uk|uz)/i.test(navigator.language || "ru")) document.body.classList.add("af-en");
+      document.querySelector("#unity-loading-bar").style.display = "block";
+
+      // 21.11: долгий тап и правый клик не открывают меню браузера и не выделяют текст (требование Яндекс Игр).
+      document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      canvas.addEventListener("selectstart", function (e) { e.preventDefault(); });
+
+      // 21.11: пауза звука, когда вкладка скрыта или площадка просит паузу.
+      function afSendHidden(hidden) {
+        if (window.afUnity) window.afUnity.SendMessage("YandexSdk", "OnPageHidden", hidden ? "1" : "0");
+      }
+      document.addEventListener("visibilitychange", function () { afSendHidden(document.hidden); });
+
+      // 21.11: сначала SDK Яндекса (не дольше 4 с), потом игра — чтобы язык из SDK был известен сразу.
+      // 27.11: Пикабу Игры. Игра лежит на своём хостинге (GitHub Pages) и открывается во фрейме games.pikabu.ru.
+      // Подключаем их SDK (PkbSDK) и даём игре тот же набор методов, что у SDK Яндекса (window.ysdk) — тогда
+      // C#-часть и YandexSdk.jslib работают без изменений: реклама, облачное сохранение (sdk.storage, ключ af),
+      // «игра готова» (sdk.gameStarted). Лидерборда у Пикабу нет — Пантеон там только свой, без входа через Яндекс.
+      // Язык по умолчанию — русский (требование площадки). Признак Пикабу: ?pikabu=1 в адресе или фрейм games.pikabu.ru.
+      function afIsPikabu() {
+        try {
+          if (/[?&](pikabu(=|&|$)|_platform-key=pikabu)/.test(location.search)) return true;
+          if ((document.referrer || '').indexOf('pikabu.ru') >= 0) return true;
+          var a = location.ancestorOrigins;
+          if (a) for (var i = 0; i < a.length; i++) if (String(a[i]).indexOf('pikabu.ru') >= 0) return true;
+        } catch (e) {}
+        return false;
+      }
+      function afPikabuAdapter(sdk) {
+        window.pkbsdk = sdk;
+        var player = {
+          isAuthorized: function () { return true; },     // нет входа через Яндекс и кнопки «Войти» в Пантеоне
+          getUniqueID: function () { return ''; },
+          getMode: function () { return 'lite'; },
+          getData: function (keys) {
+            var r = {};
+            try { (keys || ['af']).forEach(function (k) { var v = sdk.storage.get(k); if (v !== undefined && v !== null) r[k] = v; }); } catch (e) {}
+            return Promise.resolve(r);
+          },
+          setData: function (data, urgent) {
+            try { for (var k in data) if (Object.prototype.hasOwnProperty.call(data, k)) sdk.storage.set(k, data[k]); }
+            catch (e) { return Promise.reject(e); }
+            if (!urgent) return Promise.resolve();      // SDK сам отправит с небольшой задержкой
+            return sdk.storage.flush().then(function (res) { if (res && res.reason) console.warn('Pikabu cloud save: ' + res.reason); });
+          }
+        };
+        function ad(kind) { return sdk.ads && sdk.ads[kind]; }
+        return {
+          environment: { i18n: { lang: 'ru' }, payload: '' },
+          features: {
+            LoadingAPI: { ready: function () { try { sdk.gameStarted(); } catch (e) { console.warn('Pikabu gameStarted failed', e); } } },
+            GameplayAPI: { start: function () {}, stop: function () {} }
+          },
+          adv: {
+            showRewardedVideo: function (o) {
+              var cb = (o && o.callbacks) || {}, a = ad('rewarded'), opened = false;
+              if (!a || !a.isSupported) { if (cb.onError) cb.onError('not supported'); return; }
+              a.canShow().then(function (ok) {
+                if (!ok) { if (cb.onError) cb.onError('cannot show'); return; }
+                opened = true; if (cb.onOpen) cb.onOpen();
+                return a.show().then(function (r) {
+                  if (r && r.reward && cb.onRewarded) cb.onRewarded();
+                  if (cb.onClose) cb.onClose();
+                });
+              }).catch(function (e) { console.warn('Pikabu rewarded error', e); if (opened) { if (cb.onClose) cb.onClose(); } else if (cb.onError) cb.onError(e); });
+            },
+            showFullscreenAdv: function (o) {
+              var cb = (o && o.callbacks) || {}, a = ad('fullscreen');
+              if (!a || !a.isSupported) { if (cb.onClose) cb.onClose(false); return; }
+              a.canShow().then(function (ok) {
+                if (!ok) { if (cb.onClose) cb.onClose(false); return; }   // пауза 120 с между показами — правило Пикабу
+                if (cb.onOpen) cb.onOpen();
+                return a.show().then(function (r) { if (cb.onClose) cb.onClose(!!(r && r.rendered)); });
+              }).catch(function (e) { console.warn('Pikabu fullscreen error', e); if (cb.onClose) cb.onClose(false); });
+            }
+          },
+          getPlayer: function () { return Promise.resolve(player); },
+          leaderboards: {
+            setScore: function () { return Promise.resolve(); },
+            getEntries: function () { return Promise.resolve({ entries: [] }); }
+          },
+          auth: { openAuthDialog: function () { return Promise.reject('no auth on Pikabu'); } },
+          serverTime: function () { return Date.now(); },
+          on: function () {}, off: function () {},
+          isPikabu: true
+        };
+      }
+      function afInitPikabu() {
+        var work = new Promise(function (resolve) {
+          var s = document.createElement('script');
+          s.src = 'https://games.pikabu.ru/sdk/sdk.js'; s.async = true;
+          s.onload = function () {
+            if (typeof PkbSDK === 'undefined') { resolve(null); return; }
+            PkbSDK.init().then(function (sdk) { window.ysdk = afPikabuAdapter(sdk); console.log('AF: SDK Пикабу подключён'); resolve(window.ysdk); })
+              .catch(function (e) { console.warn('Pikabu SDK init failed', e); resolve(null); });
+          };
+          s.onerror = function () { console.warn('Pikabu SDK script failed'); resolve(null); };
+          document.head.appendChild(s);
+        });
+        return Promise.race([work, new Promise(function (r) { setTimeout(function () { r(null); }, 8000); })]);
+      }
+
+      function afInitSdk() {
+        if (typeof YaGames === "undefined") return afIsPikabu() ? afInitPikabu() : Promise.resolve(null);
+        var init = YaGames.init().then(function (sdk) {
+          window.ysdk = sdk;
+          // 25.11: ?payload=afdebug в адресе игры на Яндексе включает отладочную панель (один раз перезагружаем страницу,
+          // пока ещё ничего не скачано; до закрытия вкладки панель остаётся включённой).
+          try {
+            var afPayload = (sdk.environment && sdk.environment.payload) || '';
+            if (/afdebug/.test(afPayload) && !window.AFDbg && sessionStorage.getItem('AF.Debug') !== '1') {
+              sessionStorage.setItem('AF.Debug', '1'); location.reload(); return new Promise(function () {});
+            }
+          } catch (e) {}
+          try {
+            sdk.on("game_api_pause", function () { afSendHidden(true); });
+            sdk.on("game_api_resume", function () { afSendHidden(false); });
+          } catch (e) {}
+          return sdk;
+        }).catch(function (e) { console.warn("Yandex SDK init failed", e); return null; });
+        var timeout = new Promise(function (resolve) { setTimeout(function () { resolve(null); }, 4000); });
+        return Promise.race([init, timeout]);
+      }
+
+      // 25.11: если страница перезагружена ради облачного сохранения, полоса сразу стоит на 85% — без пустой полосы в начале.
+      try { if (sessionStorage.getItem('AF.CloudReload') === '1') document.querySelector("#unity-progress-bar-full").style.width = "85%"; } catch (e) {}
+      // 26.11: восстановление загрузки. На слабом телефоне браузер выгружает фоновую вкладку и при возврате
+      // грузит игру заново; если скачивание оборвалось (вкладку снова свернули), файл мог сохраниться битым —
+      // тогда Unity пишет «Unknown data format», а полоса стоит пустой. Вместо окна с ошибкой:
+      // 1-я попытка — просто перезагрузка (при ошибке файла — сразу с очисткой кэша файлов игры UnityCache), 2-я — с очисткой,
+      // дальше — экран с кнопкой. Сохранения (/idbfs) не трогаются.
+      var afLoadDone = false, afLastMove = Date.now(), afRecovering = false;
+      function afLoadFailed(reason, badFile) {
+        if (afLoadDone || afRecovering) return;
+        afRecovering = true;
+        var n = 0;
+        try { n = parseInt(sessionStorage.getItem('AF.LoadRetry') || '0', 10) || 0; } catch (e) {}
+        console.warn('AF load: сбой загрузки (' + reason + '), попытка ' + (n + 1));
+        if (n >= 2) { afShowLoadError(); return; }
+        try { sessionStorage.setItem('AF.LoadRetry', String(n + 1)); } catch (e) {}
+        var go = function () { location.reload(); };
+        if (n === 0 && !badFile) { go(); return; }   // битый файл: кэш чистим сразу, иначе браузер подставит его снова
+        try {
+          var del = indexedDB.deleteDatabase('UnityCache');
+          del.onsuccess = del.onerror = del.onblocked = go;
+          setTimeout(go, 3000);
+        } catch (e) { go(); }
+      }
+      function afShowLoadError() {
+        try { sessionStorage.removeItem('AF.LoadRetry'); } catch (e) {}
+        var en = (navigator.language || '').toLowerCase().indexOf('ru') !== 0;
+        try { if (window.ysdk && window.ysdk.environment && window.ysdk.environment.i18n) en = window.ysdk.environment.i18n.lang !== 'ru'; } catch (e) {}
+        var box = document.createElement("div");
+        box.style.cssText = "position:fixed;inset:0;background:#100b08;color:#e8cc8b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px;text-align:center;font:24px Georgia;z-index:20";
+        var text = document.createElement("div");
+        text.innerHTML = en ? "LOADING FAILED<br><span style='font-size:18px;opacity:.8'>Check your connection and try again. Your progress is saved.</span>"
+                            : "НЕ УДАЛОСЬ ЗАГРУЗИТЬ ИГРУ<br><span style='font-size:18px;opacity:.8'>Проверьте интернет и попробуйте ещё раз. Прогресс сохранён.</span>";
+        var btn = document.createElement("button");
+        btn.textContent = en ? "TRY AGAIN" : "ПОПРОБОВАТЬ ЕЩЁ РАЗ";
+        btn.style.cssText = "font:20px Georgia;color:#e8cc8b;background:#2a0905;border:2px solid #c5972f;border-radius:6px;padding:14px 34px;cursor:pointer";
+        btn.onclick = function () {
+          var go = function () { location.reload(); };
+          try { var del = indexedDB.deleteDatabase('UnityCache'); del.onsuccess = del.onerror = del.onblocked = go; setTimeout(go, 3000); } catch (e) { go(); }
+        };
+        box.appendChild(text); box.appendChild(btn); document.body.appendChild(box);
+      }
+      // Сторож: полоса не двигалась 45 с, пока вкладка на экране (время в фоне не считается) — перезапуск.
+      setInterval(function () {
+        if (afLoadDone) return;
+        if (document.hidden) { afLastMove = Date.now(); return; }
+        if (Date.now() - afLastMove > 45000) afLoadFailed('полоса стоит 45 с');
+      }, 1000);
+      document.addEventListener("visibilitychange", function () { if (!document.hidden) afLastMove = Date.now(); });
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onerror = function () { afLoadFailed('загрузчик не скачался'); };
+      // 22.11 (v8): облачное сохранение, приготовленное прошлой страницей (AF.CloudPending в localStorage), записываем
+      // в хранилище Unity (IndexedDB "/idbfs", как это делает Emscripten IDBFS) ДО запуска игры — тогда его нечему затереть.
+      function afApplyCloudPending() {
+        var job = null;
+        try { job = JSON.parse(localStorage.getItem('AF.CloudPending') || 'null'); } catch (e) {}
+        if (!job || !job.p || !job.d) return Promise.resolve();
+        return new Promise(function (resolve) {
+          var finish = function (msg) { console.log('AF cloud: ' + msg); try { localStorage.removeItem('AF.CloudPending'); } catch (e) {} resolve(); };
+          try {
+            var bin = atob(job.d), bytes = new Uint8Array(bin.length);
+            for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            var req = indexedDB.open('/idbfs');
+            req.onupgradeneeded = function () {
+              var db = req.result;
+              if (!db.objectStoreNames.contains('FILE_DATA')) db.createObjectStore('FILE_DATA').createIndex('timestamp', 'timestamp', { unique: false });
+            };
+            req.onerror = function () { finish('не удалось открыть хранилище: ' + req.error); };
+            req.onsuccess = function () {
+              var db = req.result;
+              if (!db.objectStoreNames.contains('FILE_DATA')) { db.close(); finish('нет хранилища FILE_DATA'); return; }
+              var tx = db.transaction('FILE_DATA', 'readwrite'), st = tx.objectStore('FILE_DATA'), now = new Date();
+              var dir = job.p.substring(0, job.p.lastIndexOf('/'));
+              var parts = dir.split('/').filter(Boolean), cur = '';
+              for (var k = 0; k < parts.length; k++) {
+                cur += '/' + parts[k];
+                if (k === 0) continue;   // сама точка монтирования (/idbfs) в хранилище не пишется
+                st.put({ timestamp: now, mode: 16895 }, cur);
+              }
+              st.put({ timestamp: now, mode: 33206, contents: bytes }, job.p);
+              tx.oncomplete = function () { db.close(); finish('облачное сохранение записано до запуска (' + bytes.length + ' байт, метка ' + job.t + ')'); };
+              tx.onerror = function () { db.close(); finish('ошибка записи: ' + tx.error); };
+            };
+          } catch (e) { finish('ошибка: ' + e); }
+        });
+      }
+
+      // Полоса держится, пока облако не ответит (или 15 с): если нужна перезагрузка с облачным сохранением,
+      // она пройдёт как продолжение загрузки, а не после титульника.
+      // MD5 (RFC 1321) — нужен, чтобы заранее узнать папку сохранения Unity: /idbfs/<md5 адреса папки страницы>.
+      function afMd5(str) {
+        var s = unescape(encodeURIComponent(str)), n = s.length, i, words = [];
+        for (i = 0; i < n; i++) words[i >> 2] |= s.charCodeAt(i) << ((i % 4) * 8);
+        words[n >> 2] |= 0x80 << ((n % 4) * 8);
+        var len = (((n + 8) >> 6) + 1) * 16;
+        for (i = 0; i < len; i++) words[i] = words[i] | 0;
+        words[len - 2] = n * 8;
+        var a = 1732584193, b = -271733879, c = -1732584194, d = 271733878;
+        function add(x, y) { var l = (x & 0xffff) + (y & 0xffff); return (((x >> 16) + (y >> 16) + (l >> 16)) << 16) | (l & 0xffff); }
+        function rol(x, r) { return (x << r) | (x >>> (32 - r)); }
+        function cm(q, a, b, x, s, t) { return add(rol(add(add(a, q), add(x, t)), s), b); }
+        function ff(a, b, c, d, x, s, t) { return cm((b & c) | (~b & d), a, b, x, s, t); }
+        function gg(a, b, c, d, x, s, t) { return cm((b & d) | (c & ~d), a, b, x, s, t); }
+        function hh(a, b, c, d, x, s, t) { return cm(b ^ c ^ d, a, b, x, s, t); }
+        function ii(a, b, c, d, x, s, t) { return cm(c ^ (b | ~d), a, b, x, s, t); }
+        var S = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21], T = [];
+        for (i = 0; i < 64; i++) T[i] = (Math.abs(Math.sin(i + 1)) * 4294967296) | 0;
+        for (var o = 0; o < len; o += 16) {
+          var oa = a, ob = b, oc = c, od = d;
+          for (i = 0; i < 64; i++) {
+            var r = i >> 4, f = r === 0 ? ff : r === 1 ? gg : r === 2 ? hh : ii;
+            var k = r === 0 ? i : r === 1 ? (5 * i + 1) % 16 : r === 2 ? (3 * i + 5) % 16 : (7 * i) % 16;
+            var t = f(a, b, c, d, words[o + k], S[r * 4 + i % 4], T[i]);
+            a = d; d = c; c = b; b = t;
+          }
+          a = add(a, oa); b = add(b, ob); c = add(c, oc); d = add(d, od);
+        }
+        var out = '', v = [a, b, c, d];
+        for (i = 0; i < 16; i++) out += ('0' + ((v[i >> 2] >> ((i % 4) * 8)) & 0xff).toString(16)).slice(-2);
+        return out;
+      }
+
+      // 25.11: первая загрузка после обновления сборки. У новой версии свой адрес, значит и своя (пустая) папка сохранения;
+      // раньше игра запускалась, узнавала, что в облаке есть сохранение, и перезагружала страницу — полоса шла дважды.
+      // Теперь облако спрашиваем ДО запуска игры: если локального сохранения по этому адресу ещё нет, а в облаке есть —
+      // кладём его в очередь AF.CloudPending, и afApplyCloudPending записывает его до старта. Перезагрузка не нужна.
+      // Если локальное сохранение уже есть — ничего не делаем, всё решает игра, как раньше.
+      // Папка сохранения Unity: /idbfs/<md5 адреса папки страницы> (документация Unity, Application.persistentDataPath).
+      // Если адрес посчитан не так, как считает Unity, игра это заметит (YandexSdk.jslib) и отключит эту проверку.
+      function afPrefsPath() {
+        var url = document.URL, q = url.indexOf('?');
+        if (q >= 0) url = url.substring(0, q);
+        return '/idbfs/' + afMd5(url.substring(0, url.lastIndexOf('/'))) + '/PlayerPrefs';
+      }
+      function afLocalSaveExists(path) {
+        return new Promise(function (resolve) {
+          try {
+            var req = indexedDB.open('/idbfs');
+            req.onupgradeneeded = function () {
+              var db = req.result;
+              if (!db.objectStoreNames.contains('FILE_DATA')) db.createObjectStore('FILE_DATA').createIndex('timestamp', 'timestamp', { unique: false });
+            };
+            req.onerror = function () { resolve(true); };          // не смогли проверить — считаем, что есть (ничего не трогаем)
+            req.onsuccess = function () {
+              var db = req.result;
+              if (!db.objectStoreNames.contains('FILE_DATA')) { db.close(); resolve(false); return; }
+              var get = db.transaction('FILE_DATA', 'readonly').objectStore('FILE_DATA').get(path);
+              get.onsuccess = function () { db.close(); resolve(!!get.result); };
+              get.onerror = function () { db.close(); resolve(true); };
+            };
+          } catch (e) { resolve(true); }
+        });
+      }
+      function afCloudPrecheck() {
+        var path = afPrefsPath();
+        window.AFPredictedPrefs = path;
+        var bad = false, pending = false;
+        try { bad = localStorage.getItem('AF.PathAlgoBad') === '1'; pending = !!localStorage.getItem('AF.CloudPending'); } catch (e) {}
+        if (!window.ysdk || bad || pending) return Promise.resolve();
+        var work = afLocalSaveExists(path).then(function (exists) {
+          if (exists) return;
+          return window.ysdk.getPlayer({ scopes: false }).then(function (p) {
+            window.AFYaPlayer = p;
+            return p.getData(['af']);
+          }).then(function (data) {
+            var c = data && data.af;
+            if (!c || !c.t || !c.d) { console.log('AF cloud: до запуска — локального сохранения нет, облако пустое'); return; }
+            var bin = atob(c.d), bytes = new Uint8Array(bin.length);
+            for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            var raw = c.z
+              ? new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer().then(function (b) { return new Uint8Array(b); })
+              : Promise.resolve(bytes);
+            return raw.then(function (u) {
+              var s = '';
+              for (var k = 0; k < u.length; k += 8192) s += String.fromCharCode.apply(null, u.subarray(k, k + 8192));
+              localStorage.setItem('AF.CloudPending', JSON.stringify({ p: path, t: c.t, d: btoa(s) }));
+              console.log('AF cloud: до запуска — локального сохранения нет, берём облачное (метка ' + c.t + ', ' + u.length + ' байт)');
+            });
+          });
+        }).catch(function (e) { console.warn('AF cloud: проверка до запуска не удалась — ' + e); });
+        var timeout = new Promise(function (resolve) { setTimeout(resolve, 6000); });
+        return Promise.race([work, timeout]);
+      }
+
+      function afWaitCloud() {
+        return new Promise(function (resolve) {
+          var t0 = Date.now();
+          (function poll() {
+            if (!window.ysdk || window.AFCloudDone || Date.now() - t0 > 15000) resolve(); else setTimeout(poll, 100);
+          })();
+        });
+      }
+
+      // 25.11: у вернувшегося игрока (есть сохранение) экран загрузки держим, пока не докачаются фоны уровней —
+      // иначе после «ИГРАТЬ» несколько секунд не было фона (пустой экран с окном АФК). Не дольше 12 секунд.
+      // Новому игроку ждать нечего: фон первого уровня лежит в стартовой части.
+      function afMarkReturning() {
+        var pending = false;
+        try { pending = !!localStorage.getItem('AF.CloudPending'); } catch (e) {}
+        if (pending) { window.AFReturning = true; return Promise.resolve(); }
+        var check = afLocalSaveExists(afPrefsPath()).then(function (exists) { window.AFReturning = !!exists; }, function () {});
+        return Promise.race([check, new Promise(function (r) { setTimeout(r, 5000); })]);   // 26.11: хранилище не ответило — не висим
+      }
+      function afWaitBackgrounds() {
+        return new Promise(function (resolve) {
+          if (!window.AFReturning) { resolve(); return; }
+          var t0 = Date.now();
+          (function poll() {
+            if (window.AFBgDone || Date.now() - t0 > 12000) resolve(); else setTimeout(poll, 100);
+          })();
+        });
+      }
+
+      // 26.11: у каждой новой версии игры свой адрес (…/v2/, …/v3/), а Unity хранит сохранение в папке, привязанной
+      // к адресу: /idbfs/<md5 адреса>. Без облака (хостинг GamePush) после обновления игра начиналась с нуля.
+      // Теперь: если по новому адресу сохранения нет и облако ничего не подставило, копируем самую свежую папку
+      // сохранения прошлой версии (тот же сайт — то же хранилище браузера). Старая папка не трогается.
+      function afMigrateOldLocal() {
+        var path = afPrefsPath(), bad = false, pending = false;
+        try { bad = localStorage.getItem('AF.PathAlgoBad') === '1'; pending = !!localStorage.getItem('AF.CloudPending'); } catch (e) {}
+        if (bad || pending) return Promise.resolve();
+        var work = afLocalSaveExists(path).then(function (exists) {
+          if (exists) return;
+          return new Promise(function (resolve) {
+            try {
+              var req = indexedDB.open('/idbfs');
+              req.onerror = function () { resolve(); };
+              req.onsuccess = function () {
+                var db = req.result;
+                if (!db.objectStoreNames.contains('FILE_DATA')) { db.close(); resolve(); return; }
+                var newDir = path.substring(0, path.lastIndexOf('/'));
+                var best = null, bestTime = 0, all = [];
+                var cur = db.transaction('FILE_DATA', 'readonly').objectStore('FILE_DATA').openCursor();
+                cur.onerror = function () { db.close(); resolve(); };
+                cur.onsuccess = function () {
+                  var c = cur.result;
+                  if (c) {
+                    var key = String(c.key);
+                    all.push({ k: key, v: c.value });
+                    if (/^\/idbfs\/[0-9a-f]{32}\/PlayerPrefs$/.test(key) && key !== path) {
+                      var t = c.value && c.value.timestamp ? new Date(c.value.timestamp).getTime() : 0;
+                      if (!best || t > bestTime) { best = key; bestTime = t; }
+                    }
+                    c.continue(); return;
+                  }
+                  if (!best) { db.close(); resolve(); return; }
+                  var oldDir = best.substring(0, best.lastIndexOf('/'));
+                  var tx = db.transaction('FILE_DATA', 'readwrite'), st = tx.objectStore('FILE_DATA'), n = 0;
+                  for (var i = 0; i < all.length; i++) {
+                    var k = all[i].k;
+                    if (k === oldDir) { st.put(all[i].v, newDir); continue; }
+                    if (k.indexOf(oldDir + '/') === 0) { st.put(all[i].v, newDir + k.substring(oldDir.length)); n++; }
+                  }
+                  tx.oncomplete = function () { db.close(); console.log('AF save: перенесено сохранение прошлой версии (' + oldDir + ' → ' + newDir + ', файлов ' + n + ')'); resolve(); };
+                  tx.onerror = function () { db.close(); console.warn('AF save: перенос не удался ' + tx.error); resolve(); };
+                };
+              };
+            } catch (e) { resolve(); }
+          });
+        });
+        return Promise.race([work, new Promise(function (r) { setTimeout(r, 5000); })]);
+      }
+
+      script.onload = () => afInitSdk().then(afCloudPrecheck).then(afMigrateOldLocal).then(afMarkReturning).then(afApplyCloudPending).then(() => {
+        // 22.11: полоса — только стартовая часть, и доходит до 100% ровно к титульнику.
+        // Скачивание (Unity даёт 0…0,9) — 0…85%, запуск игры (Unity его почти не показывает) — плавно 85…99%,
+        // игра готова — 100%. Фоновая докачка (StreamingAssets/late) на полосу не влияет.
+        var afBar = document.querySelector("#unity-progress-bar-full"), afShown = 0, afCreep = null;
+        // 23.11: страница перезагружена ради облачного сохранения — для игрока это одна загрузка: полоса продолжается
+        // с того места, где была (85%), а не появляется пустой второй раз. Файлы при этом берутся из кэша браузера.
+        try {
+          if (sessionStorage.getItem('AF.CloudReload') === '1') { sessionStorage.removeItem('AF.CloudReload'); afShown = 85; afBar.style.width = "85%"; }
+        } catch (e) {}
+        // Экран загрузки закрывает холст целиком: пока ждём облако, титульник под ним не виден.
+        document.querySelector("#unity-loading-bar").style.cssText =
+          "position:absolute;inset:0;transform:none;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;z-index:5;";
+        function afSetBar(v) { afShown = Math.max(afShown, v); afBar.style.width = afShown.toFixed(1) + "%"; }
+        var afLastProgress = -1;
+        afLastMove = Date.now();
+        createUnityInstance(canvas, config, (progress) => {
+          if (progress > afLastProgress) { afLastProgress = progress; afLastMove = Date.now(); }
+          afSetBar(Math.min(progress / 0.9, 1) * 85);
+          if (progress >= 0.9 && !afCreep)
+            afCreep = setInterval(function () { afSetBar(afShown + (99 - afShown) * 0.04); afLastMove = Date.now(); }, 100);
+              }).then((unityInstance) => { if (window.AFDbgLoad) window.AFDbgLoad('Движок запущен:'); return afWaitCloud().then(afWaitBackgrounds).then(() => unityInstance); }).then((unityInstance) => {
+                if (afCreep) clearInterval(afCreep);
+                afLoadDone = true;
+                try { sessionStorage.removeItem('AF.LoadRetry'); } catch (e) {}
+                afSetBar(100);
+                window.AFOverlayGone = true;   // 23.11: после этого облачное сохранение страницу уже не перезагружает
+                window.afUnity = unityInstance;
+                if (window.AFDbgLoad) { window.AFDbgLoad('Игра готова:'); if (window.AFFpsReset) window.AFFpsReset(); }   // 23.11: замер загрузки (afdebug=1)
+                // 22.11: экран после выхода. На телефоне вкладку скриптом закрыть нельзя — раньше игрок оставался
+                // на «мёртвом» экране. Теперь есть кнопка вернуться (перезагрузка страницы, прогресс уже сохранён).
+                window.AFShowClosedScreen = function () {
+                  var closed = document.createElement("div");
+                  closed.style.cssText = "position:fixed;inset:0;background:#100b08;color:#e8cc8b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px;text-align:center;font:24px Georgia";
+                  var text = document.createElement("div");
+                  text.innerHTML = "ИГРА ЗАКРЫТА<br><span style='font-size:18px;opacity:.8'>Герой зарабатывает, пока вас нет. Вкладку можно закрыть.</span>";
+                  var back = document.createElement("button");
+                  back.textContent = "ВЕРНУТЬСЯ В ИГРУ";
+                  back.style.cssText = "font:20px Georgia;color:#e8cc8b;background:#2a0905;border:2px solid #c5972f;border-radius:6px;padding:14px 34px;cursor:pointer";
+                  back.onclick = function () { location.reload(); };
+                  closed.appendChild(text); closed.appendChild(back);
+                  document.body.appendChild(closed);
+                };
+                window.AFQuitGame = function () {
+                  window.close();
+                  unityInstance.Quit().then(function () {
+                    document.querySelector("#unity-container").style.display = "none";
+                    window.AFShowClosedScreen();
+                  });
+                };
+                setTimeout(function () { document.querySelector("#unity-loading-bar").style.display = "none"; }, 200);
+                document.querySelector("#unity-fullscreen-button").onclick = () => {
+                  unityInstance.SetFullscreen(1);
+                };
+
+              }).catch((message) => {
+                afLoadFailed(String(message), true);
+              });
+            });
+
+      document.body.appendChild(script);
+
+    </script>
+  </body>
+</html>

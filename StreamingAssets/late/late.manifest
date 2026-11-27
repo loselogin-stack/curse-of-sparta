@@ -1,0 +1,21 @@
+ManifestFileVersion: 0
+UnityVersion: 6000.5.9f1
+CRC: 505982020
+HashAppended: 0
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: late_mobs
+      Dependencies: {}
+    Info_1:
+      Name: late_mobs1
+      Dependencies: {}
+    Info_2:
+      Name: late_pupils
+      Dependencies: {}
+    Info_3:
+      Name: late_bg
+      Dependencies: {}
+    Info_4:
+      Name: late_main
+      Dependencies: {}

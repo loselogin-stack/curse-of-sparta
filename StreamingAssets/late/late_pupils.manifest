@@ -1,0 +1,152 @@
+ManifestFileVersion: 0
+UnityVersion: 6000.5.9f1
+CRC: 1023175183
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 9f282a0722a57290ab14a017791145ee
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: fe8c1ec1a4e4aa9ba7396e38dd378dc4
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: d0f1922e7666a68d3e22bd64137b98aa
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 23
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 33
+  Script: {instanceID: 0}
+- Class: 43
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 74
+  Script: {instanceID: 0}
+- Class: 89
+  Script: {instanceID: 0}
+- Class: 91
+  Script: {instanceID: 0}
+- Class: 95
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 11500000, guid: 62c9830ed6a0a6a48967a46803ebef6d, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: ee5fbc11c2b4a9b48ae05c02de1aa39e, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 86292406d32fb90479580060c383a905, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: aa0e257afdbb6354aa398dacb976e44b, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 174f717de53e3df43a2cecd134ee283d, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 137
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/Apprentices/HopliteGold/HopliteApprentice_ShortHair.asset
+- Assets/Apprentices/IlotSpartiat/AuthorPBR/SK_SP_JT_JAVEL_3_0.mat
+- Assets/Apprentices/AtrosPerioik/AtrosApprentice_Perioik.prefab
+- Assets/Apprentices/HopliteGold/HopliteApprentice_Gold.prefab
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_09_0.mat
+- Assets/InventoryGoplitPreview/Apprentices/HoplitePerioikPreviewEyes.mat
+- Assets/Apprentices/HopliteGold/AuthorPBR/Gold_SK_SP_H_H_04_0.mat
+- Assets/Apprentices/AtrosSpartiat/AtrosApprentice_Spartiat.prefab
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_JAVEL_4_0.mat
+- Assets/InventoryIlotPreview/PupilStrapFit/SpartiatIlotModel_FittedQuiverStrap.asset
+- Assets/Apprentices/HopliteGold/HopliteApprentice_ShortHair.mat
+- Assets/InventoryIlotPreview/ShieldSpearPreviewFix/SpartiatIlotModel_MatchedSpearTip.asset
+- Assets/Art/AtrosPresentation/AtrosSpartiatHelmet.mat
+- Assets/Apprentices/SkirtFit/SK_SP_H_H_09_SkirtFit.asset
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_07_0.mat
+- Assets/Apprentices/HoplitePerioik/AuthorPBR/Silver_SK_SP_H_H_03_0.mat
+- Assets/Apprentices/HoplitePerioik/HopliteApprentice_SilverArmor_Studio.mat
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_JAVEL_2_0.mat
+- Assets/Art/AtrosPresentation/AtrosPerioikHelmet.mat
+- Assets/Art/AtrosPresentation/AtrosPerioikUnderwear.mat
+- Assets/Apprentices/HopliteGold/AuthorPBR/Gold_SK_SP_H_H_06_0.mat
+- Assets/Apprentices/HopliteGold/AuthorPBR/Gold_SK_SP_H_H_09_0.mat
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_JAVEL_3_0.mat
+- Assets/InventoryGoplitPreview/Apprentices/SpartiatIlotPreviewSkin.mat
+- Assets/InventoryGoplitPreview/Apprentices/HopliteSpartiatPreviewEyes.mat
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_14_0.mat
+- Assets/Apprentices/HopliteGold/AuthorPBR/Gold_SK_SP_H_H_10_0.mat
+- Assets/Apprentices/IlotSpartiat/AuthorPBR/SK_SP_JT_06_0.mat
+- Assets/InventoryIlotPreview/TunicQuiverPlume/Helmet_2.mat
+- Assets/Apprentices/IlotSpartiat/AuthorPBR/SK_SP_JT_07_0.mat
+- Assets/InventoryIlotPreview/TunicQuiverPlume/Preview_2_Body.mat
+- Assets/Apprentices/HoplitePerioik/AuthorPBR/Silver_SK_SP_H_H_SPEAR_0.mat
+- Assets/Apprentices/HoplitePerioik/AuthorPBR/Silver_SK_SP_H_H_10_0.mat
+- Assets/Apprentices/IlotPerioik/IlotApprentice_ShieldGreen_IlotPreviewShieldReadable.mat
+- Assets/Apprentices/HopliteGold/AuthorPBR/Gold_SK_SP_H_H_08_0.mat
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_03_0.mat
+- Assets/Apprentices/IlotPerioik/IlotApprentice_Perioik.prefab
+- Assets/Apprentices/IlotSpartiat/AuthorPBR/SK_SP_JT_12_0.mat
+- Assets/Apprentices/IlotSpartiat/IlotApprentice_ShieldBlue_IlotPreviewShieldReadable.mat
+- Assets/Apprentices/HoplitePerioik/AuthorPBR/Silver_SK_SP_H_H_05_0.mat
+- Assets/Art/AtrosPresentation/AtrosPupilPreviewBody.asset
+- Assets/Apprentices/AtrosPerioik/AtrosApprentice_Display.controller
+- Assets/Apprentices/AtrosPerioik/AtrosApprentice_Hair.mat
+- Assets/Apprentices/IlotSpartiat/AuthorPBR/SK_SP_JT_10_0.mat
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_06_0.mat
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_05_0.mat
+- Assets/Apprentices/IlotSpartiat/AuthorPBR/SK_SP_JT_05_0.mat
+- Assets/Apprentices/IlotSpartiat/IlotApprentice_Spartiat.prefab
+- Assets/Apprentices/HopliteGold/HopliteApprentice_GoldGreave_Studio.mat
+- Assets/Apprentices/HopliteGold/HopliteApprentice_Display.controller
+- Assets/Apprentices/HopliteGold/HopliteApprentice_GoldGreaveLeft_Studio.mat
+- Assets/Apprentices/HoplitePerioik/AuthorPBR/Silver_SK_SP_H_H_11_0.mat
+- Assets/InventoryIlotPreview/TunicQuiverPlume/Preview_2_Continuous_ContinuousTubeMaterial.mat
+- Assets/Apprentices/HopliteGold/AuthorPBR/Gold_SK_SP_H_H_03_0.mat
+- Assets/InventoryGoplitPreview/Apprentices/PerioikIlotPreviewSkin.mat
+- Assets/InventoryGoplitPreview/Apprentices/HopliteSpartiatPreviewSkin.mat
+- Assets/Apprentices/IlotSpartiat/IlotApprentice_MediumHair.asset
+- Assets/Apprentices/IlotSpartiat/AuthorPBR/SK_SP_JT_JAVEL_2_0.mat
+- Assets/Apprentices/HopliteGold/HopliteApprentice_GoldArmor.mat
+- Assets/InventoryIlotPreview/TunicQuiverPlume/Preview_1_Shoulder.mat
+- Assets/Apprentices/HoplitePerioik/AuthorPBR/Silver_SK_SP_H_H_08_0.mat
+- Assets/Apprentices/IlotSpartiat/IlotApprentice_Display.controller
+- Assets/Apprentices/AtrosPerioik/AtrosApprentice_HeroLikeSkin.mat
+- Assets/InventoryIlotPreview/TunicQuiverPlume/Preview_2_Continuous_ContinuousTubeCord.asset
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_10_0.mat
+- Assets/Apprentices/HopliteGold/AuthorPBR/Gold_SK_SP_H_H_SPEAR_0.mat
+- Assets/Apprentices/AtrosPerioik/AtrosApprentice_AuthorGreenCloth.mat
+- Assets/Apprentices/HoplitePerioik/HopliteApprentice_ShieldGreen_Silver_SK_SP_H_H_SHIELD_0.mat
+- Assets/InventoryIlotPreview/ShieldSpearPreviewFix/PerioikIlotModel_MatchedSpearTip.asset
+- Assets/InventoryGoplitPreview/ApprovedBody/HopliteAstraFinal_Preview.asset
+- Assets/Apprentices/HopliteGold/AuthorPBR/Gold_SK_SP_H_H_05_0.mat
+- Assets/Apprentices/IlotSpartiat/AuthorPBR/SK_SP_JT_14_0.mat
+- Assets/Apprentices/HopliteApprentice_SandalsLeather.mat
+- Assets/Apprentices/HoplitePerioik/AuthorPBR/Silver_SK_SP_H_H_04_0.mat
+- Assets/Apprentices/IlotSpartiat/AuthorPBR/SK_SP_JT_09_0.mat
+- Assets/Apprentices/AtrosSpartiat/AtrosApprentice_SpartiatBlueCloth.mat
+- Assets/InventoryIlotPreview/PupilStrapFit/PerioikIlotModel_FittedQuiverStrap.asset
+- Assets/Apprentices/IlotSpartiat/IlotApprentice_MediumHair.mat
+- Assets/Art/AtrosPresentation/AtrosSpartiatUnderwear.mat
+- Assets/InventoryIlotPreview/TunicQuiverPlume/Preview_1_Body.mat
+- Assets/InventoryIlotPreview/TunicQuiverPlume/Helmet_1.mat
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_02_0.mat
+- Assets/Apprentices/HoplitePerioik/AuthorPBR/Silver_SK_SP_H_H_09_0.mat
+- Assets/Apprentices/IlotSpartiat/AuthorPBR/SK_SP_JT_JAVEL_4_0.mat
+- Assets/InventoryIlotPreview/StarterAppearance/IlotSpartiatPreview_Blue.mat
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_12_0.mat
+- Assets/Apprentices/IlotPerioik/AuthorPBR/SK_SP_JT_17_0.mat
+- Assets/Apprentices/HoplitePerioik/AuthorPBR/Silver_SK_SP_H_H_06_0.mat
+- Assets/Apprentices/AtrosPerioik/AtrosApprentice_SweptLongHair.asset
+- Assets/Apprentices/HoplitePerioik/HopliteApprentice_Perioik.prefab
+- Assets/Apprentices/SkirtFit/SK_SP_H_H_10_SkirtFit.asset
+- Assets/InventoryIlotPreview/StarterAppearance/IlotPerioikPreview_Green.mat
+- Assets/InventoryIlotPreview/StarterAppearance/ReadableSkinning/e8d9bc379f4c6474fa5b117d842a448d_6758854365067039736.asset
+- Assets/InventoryGoplitPreview/Apprentices/HoplitePerioikPreviewSkin.mat
+- Assets/InventoryIlotPreview/TunicQuiverPlume/Preview_2_Shoulder.mat
+- Assets/Apprentices/HopliteGold/HopliteApprentice_ShieldBlue_Gold_SK_SP_H_H_SHIELD_0.mat
+Dependencies: []
