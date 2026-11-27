@@ -274,6 +274,8 @@
           }
         };
         function ad(kind) { return sdk.ads && sdk.ads[kind]; }
+        // 27.11: после рекламы возвращаем фокус в игру, чтобы клавиатура и ввод работали без клика.
+        function refocus() { try { window.focus(); var c = document.querySelector('#unity-canvas'); if (c) c.focus(); } catch (e) {} }
         return {
           environment: { i18n: { lang: 'ru' }, payload: '' },
           features: {
@@ -288,6 +290,7 @@
                 if (!ok) { if (cb.onError) cb.onError('cannot show'); return; }
                 opened = true; if (cb.onOpen) cb.onOpen();
                 return a.show().then(function (r) {
+                  refocus();
                   if (r && r.reward && cb.onRewarded) cb.onRewarded();
                   if (cb.onClose) cb.onClose();
                 });
@@ -299,7 +302,7 @@
               a.canShow().then(function (ok) {
                 if (!ok) { if (cb.onClose) cb.onClose(false); return; }   // пауза 120 с между показами — правило Пикабу
                 if (cb.onOpen) cb.onOpen();
-                return a.show().then(function (r) { if (cb.onClose) cb.onClose(!!(r && r.rendered)); });
+                return a.show().then(function (r) { refocus(); if (cb.onClose) cb.onClose(!!(r && r.rendered)); });
               }).catch(function (e) { console.warn('Pikabu fullscreen error', e); if (cb.onClose) cb.onClose(false); });
             }
           },
